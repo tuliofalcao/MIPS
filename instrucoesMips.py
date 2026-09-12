@@ -222,49 +222,112 @@ def get_instrucao_mips(instrucoesBinarias):
         funct = binario[26:]
 
         for instrucao in instrucoesMips.items():
-            if opcode == instrucao[1]["opcode"] and funct == instrucao[1]["funct"]:
-                if instrucao[1]["tipo"] == 'r':
-                    opcode = binario[:6]
-                    rs = binario[6:11]
-                    rt = binario[11:16]
-                    rd = binario[16:21]
-                    shamt = binario[21:26]
-                    funct = binario[26:]
-                    desassembled.append((opcode, rs, rt, rd, shamt, funct))
-                elif instrucao[1]["tipo"] == 'i':
-                    opcode = binario[:6]
-                    rs = binario[6:11]
-                    rt = binario[11:16]
-                    immediate = binario[16:]
-                    desassembled.append((opcode, rs, rt, immediate))
-                elif instrucao[1]["tipo"] == 'j':
-                    opcode = binario[:6]
-                    address = binario[6:]
-                    desassembled.append((opcode, address))
-                elif instrucao[1]["tipo"] is None:
-                    desassembled.append((opcode, funct))
-            if opcode == instrucao[1]["opcode"] and funct == instrucao[1]["funct"]:
-                if instrucao[1]["tipo"] == 'r':
-                    opcode = binario[:6]
-                    rs = binario[6:11]
-                    rt = binario[11:16]
-                    rd = binario[16:21]
-                    shamt = binario[21:26]
-                    funct = binario[26:]
-                    desassembled.append((opcode, rs, rt, rd, shamt, funct))
-                elif instrucao[1]["tipo"] == 'i':
-                    opcode = binario[:6]
-                    rs = binario[6:11]
-                    rt = binario[11:16]
-                    immediate = binario[16:]
-                    desassembled.append((opcode, rs, rt, immediate))
-                elif instrucao[1]["tipo"] == 'j':
-                    opcode = binario[:6]
-                    address = binario[6:]
-                    desassembled.append((opcode, address))
-                elif instrucao[1]["tipo"] is None:
-                    desassembled.append((opcode, funct))
-                else:
-                    desassembled.append(("Instrução desconhecida", binario))
+            opcode = binario[:6]
+        rs = int(binario[6:11], 2)
+        rt = int(binario[11:16], 2)
+        rd = int(binario[16:21], 2)
+        shamt = int(binario[21:26], 2)
+        funct = binario[26:]
+
+        immediate_bin = binario[16:]
+        address_bin = binario[6:]
+
+        instrucao_encontrada = None
+
+        # IDENTIFICA A INSTRUÇÃO
+        for nome, dados in instrucoesMips.items():
+
+            # Tipo R
+            if dados["tipo"] == "r":
+                if opcode == dados["opcode"] and funct == dados["funct"]:
+                    instrucao_encontrada = nome
+                    break
+
+            # Tipo I
+            elif dados["tipo"] == "i":
+                if opcode == dados["opcode"]:
+                    instrucao_encontrada = nome
+                    break
+
+            # Tipo J
+            elif dados["tipo"] == "j":
+                if opcode == dados["opcode"]:
+                    instrucao_encontrada = nome
+                    break
+
+            # syscall
+            elif dados["tipo"] is None:
+                if opcode == dados["opcode"] and funct == dados["funct"]:
+                    instrucao_encontrada = nome
+                    break
+
+        # Se não encontrou
+        if instrucao_encontrada is None:
+            desassembled.append(f"Instrução desconhecida: {binario}")
+            continue
+
+        nome = instrucao_encontrada
+        tipo = instrucoesMips[nome]["tipo"]
+
+        # TIPO R
+
+        if tipo == "r":
+
+            if nome in ["sll", "srl", "sra"]:
+                assembly = f"{nome} ${rd}, ${rt}, {shamt}"
+
+            elif nome in ["sllv", "srlv", "srav"]:
+                assembly = f"{nome} ${rd}, ${rt}, ${rs}"
+
+            elif nome == "jr":
+                assembly = f"{nome} ${rs}"
+
+            elif nome in ["mfhi", "mflo"]:
+                assembly = f"{nome} ${rd}"
+
+            elif nome in ["mult", "multu", "div", "divu"]:
+                assembly = f"{nome} ${rs}, ${rt}"
+
+            elif nome == "syscall":
+                assembly = "syscall"
+
+            else:
+                assembly = f"{nome} ${rd}, ${rs}, ${rt}"
+
+        # TIPO I
+
+        elif tipo == "i":
+
+            immediate = int(immediate_bin, 2)
+
+            # Converte para signed 16 bits
+
+            if immediate >= 32768:
+                immediate -= 65536
+
+            if nome in ["lw", "sw", "lb", "lbu", "sb"]:
+                assembly = f"{nome} ${rt}, {immediate}(${rs})"
+
+            elif nome == "lui":
+                assembly = f"{nome} ${rt}, {immediate}"
+
+            elif nome in ["beq", "bne"]:
+                assembly = f"{nome} ${rs}, ${rt}, {immediate}"
+
+            elif nome in ["bgtz", "bltz", "blez"]:
+                assembly = f"{nome} ${rs}, {immediate}"
+
+            else:
+                assembly = f"{nome} ${rt}, ${rs}, {immediate}"
+
+        # TIPO J
+
+        elif tipo == "j":
+
+            address = int(address_bin, 2)
+
+            assembly = f"{nome} {address}"
+
+        desassembled.append(assembly)
 
     return desassembled
