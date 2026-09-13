@@ -49,7 +49,7 @@ def main():
     # =========================================================================
     # 4. GERAÇÃO DO ARQUIVO DE SAÍDA JSON
     # =========================================================================
-    nome_arquivo_saida = "exemploSaida.json"
+    nome_arquivo_saida = "saida.json"
     
     with open(nome_arquivo_saida, "w", encoding="utf-8") as f:
         # json.dump salva o dicionário no formato JSON com indentação legível (4 espaços)
