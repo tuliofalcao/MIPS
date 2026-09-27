@@ -23,7 +23,7 @@ instrucoesMips = {
     "jr":       {"tipo": 'r', "opcode": '000000', "funct": '001000'},
     "mfhi":     {"tipo": 'r', "opcode": '000000', "funct": '010000'},
     "mflo":     {"tipo": 'r', "opcode": '000000', "funct": '010010'},
-    "mult":     {"tipo": 'r', "opcode": '000000', "funct": '011008'},
+    "mult":     {"tipo": 'r', "opcode": '000000', "funct": '011000'},
     "multu":    {"tipo": 'r', "opcode": '000000', "funct": '011001'},
     "div":      {"tipo": 'r', "opcode": '000000', "funct": '011010'},
     "divu":     {"tipo": 'r', "opcode": '000000', "funct": '011011'},
