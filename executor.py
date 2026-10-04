@@ -1,4 +1,5 @@
 from banco_registradores import BancoRegistradores
+from memoria import Memoria
 
 
 def ajustar_32bits(valor):
@@ -13,7 +14,7 @@ def ajustar_32bits(valor):
     return valor
 
 
-def executar_instrucao(binario, banco):
+def executar_instrucao(binario, banco, memoria):
     """
     Executa uma instrução MIPS e atualiza o banco de registradores.
     """
@@ -257,5 +258,125 @@ def executar_instrucao(binario, banco):
             ajustar_32bits(resultado)
         )
 
-    # Atualiza o PC
-    banco.pc += 4
+    # LUI
+
+    elif opcode == "001111":
+
+        resultado = imediato << 16
+
+        banco.escrever(
+            rt,
+            ajustar_32bits(resultado)
+        )
+
+
+    # LOAD E STORE
+
+    # LB
+    elif opcode == "100000":
+
+        endereco = valor_rs + imediato_signed
+
+        valor = memoria.ler_byte(endereco)
+
+        if valor >= 128:
+            valor -= 256
+
+        banco.escrever(rt, valor)
+
+    # LBU
+    elif opcode == "100100":
+
+        endereco = valor_rs + imediato_signed
+
+        valor = memoria.ler_byte(endereco)
+
+        banco.escrever(rt, valor)
+
+    # LW
+    elif opcode == "100011":
+
+        endereco = valor_rs + imediato_signed
+
+        valor = memoria.ler_word(endereco)
+
+        banco.escrever(rt, valor)
+
+    # SB
+    elif opcode == "101000":
+
+        endereco = valor_rs + imediato_signed
+
+        valor = valor_rt & 0xFF
+
+        memoria.escrever_byte(
+            endereco,
+            valor
+        )
+
+    # SW
+    elif opcode == "101011":
+
+        endereco = valor_rs + imediato_signed
+
+        memoria.escrever_word(
+            endereco,
+            valor_rt
+        )
+
+    # =========================================================
+    # DESVIOS
+    # =========================================================
+
+    # BEQ
+    elif opcode == "000100":
+
+        if valor_rs == valor_rt:
+            banco.pc += imediato_signed * 4
+
+    # BNE
+    elif opcode == "000101":
+
+        if valor_rs != valor_rt:
+            banco.pc += imediato_signed * 4
+
+    # BGTZ
+    elif opcode == "000111":
+
+        if valor_rs > 0:
+            banco.pc += imediato_signed * 4
+
+    # BLTZ
+    elif opcode == "000001":
+
+        if valor_rs < 0:
+            banco.pc += imediato_signed * 4
+
+    # BLEZ
+    elif opcode == "000110":
+
+        if valor_rs <= 0:
+            banco.pc += imediato_signed * 4
+
+    # =========================================================
+    # DESVIOS TIPO J
+    # =========================================================
+
+    # J
+    elif opcode == "000010":
+
+        endereco = int(binario[6:], 2)
+
+        banco.pc = (banco.pc & 0xF0000000) | (endereco << 2)
+
+    # JAL
+    elif opcode == "000011":
+
+        endereco = int(binario[6:], 2)
+
+        banco.escrever(
+            31,
+            banco.pc + 4
+        )
+
+        banco.pc = (banco.pc & 0xF0000000) | (endereco << 2)
